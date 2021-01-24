@@ -493,6 +493,53 @@ def _with_from_imports(
     return output
 
 
+def indent_import(import_text: str, config: Config) -> str:
+    # TODO: move to config
+    dot_prev_line = True
+
+    end_idx = config.line_length - 1
+
+    result = ""  # returned indented import
+    indent = ""  # indent before following import lines
+
+    # if dot from import is on the previous line, one more space is needed for backslash
+    if dot_prev_line:
+        end_idx -= 1
+
+    while len(import_text):
+        if len(import_text) + len(indent) > config.line_length:
+            dot_idx = end_idx - import_text[end_idx - len(indent)::-1].find('.') - len(indent)
+
+            if dot_idx == -1:
+                # dot not found -> indent at first found dot -> if not found, just append to result
+                dot_idx = import_text.find('.')
+
+                # dot not found in the whole rest of import -> append it to result
+                if dot_idx == -1:
+                    result += indent + import_text
+                    import_text = ""
+                # dot found in the rest -> append the part before the dot
+                else:
+                    idx = dot_idx + 1 if dot_prev_line else dot_idx
+                    result += indent + import_text[:idx] + "\\\n"
+                    import_text = import_text[idx:]
+
+            # dot found respecting indent -> split
+            else:
+                idx = dot_idx + 1 if dot_prev_line else dot_idx
+                result += indent + import_text[:idx] + "\\\n"
+                import_text = import_text[idx:]
+
+        # rest of the import fits onto line -> append to result
+        else:
+            result += indent + import_text
+            import_text = ""
+
+        indent = " " * 4
+
+    return result
+
+
 def _with_straight_imports(
     parsed: parse.ParsedContent,
     config: Config,
@@ -550,6 +597,9 @@ def _with_straight_imports(
             )
         else:
             import_definition.append(f"{import_type} {module}")
+
+        import_definition = [indent_import(import_text, config)
+                             for import_text in import_definition]
 
         comments_above = parsed.categorized_comments["above"]["straight"].pop(module, None)
         if comments_above:
