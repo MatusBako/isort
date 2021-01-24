@@ -106,4 +106,4 @@ def _atoi(text: str) -> Any:
 
 
 def _natural_keys(text: str) -> List[Any]:
-    return [_atoi(c) for c in re.split(r"(\d+)", text)]
+    return [_atoi(c) if c != "." else 0 for c in re.split(r"([.\d]+)", text)]
