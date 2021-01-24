@@ -239,24 +239,39 @@ def process(
                     contains_imports = True
 
                     new_indent = line[: -len(line.lstrip())]
+                    import_statement = line
                     stripped_line = line.strip().split("#")[0]
-                    import_statement = ""
-                    while stripped_line.endswith("\\") or (
+
+                    condition = stripped_line.endswith("\\") or (
                         "(" in stripped_line and ")" not in stripped_line
-                    ):
-                        if stripped_line.endswith("\\"):
-                            while stripped_line and stripped_line.endswith("\\"):
-                                import_statement += stripped_line[:-1].strip()
+                    )
 
-                                line = input_stream.readline()
-                                stripped_line = line.split("#")[0].strip()
+                    if condition:
+                        import_statement = ""
 
-                            import_statement += stripped_line
-                        else:
-                            while ")" not in stripped_line:
-                                line = input_stream.readline()
-                                stripped_line = line.split("#")[0].strip()
-                                import_statement += line
+                        while condition:
+
+                            if stripped_line.endswith("\\"):
+                                while stripped_line and stripped_line.endswith("\\"):
+                                    import_statement += stripped_line[:-1].strip()
+
+                                    line = input_stream.readline()
+                                    stripped_line = line.split("#")[0].strip()
+
+                                    # import_statement += line
+                                import_statement += stripped_line
+                            else:
+                                while ")" not in stripped_line:
+                                    line = input_stream.readline()
+                                    stripped_line = line.split("#")[0].strip()
+                                    import_statement += line
+
+                            condition = stripped_line.endswith("\\") or (
+                                "(" in stripped_line and ")" not in stripped_line
+                            )
+
+                    from isort.wrap import _wrap_line
+                    # import_statement = import_statement[:7] +_wrap_line(import_statement[7:], "\n", config)
 
                     cimport_statement: bool = False
                     if (
